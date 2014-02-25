@@ -66,7 +66,7 @@ catch %#ok<*CTCH>
     Screen('CloseAll');
     fclose('all');
     psychrethrow(psychlasterror);
-end    
+end
 
 % Save tracking data to a file and disconnect
 % tracker.stopRecording()
