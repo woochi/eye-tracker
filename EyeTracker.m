@@ -56,12 +56,12 @@ classdef EyeTracker < Singleton
             obj.pCalibrationData = libpointer('CalibrationStruct', CalibrationData);
 
             disp('Define Logger')
-            calllib('iViewXAPI', 'iV_SetLogger', int32(1), formatString(256, int8('iViewXSDK_Matlab_GazeContingent_Demo.txt')))
+            calllib('iViewXAPI', 'iV_SetLogger', int32(1), 'iViewXSDK_Matlab_Slideshow_Demo.txt');
         end
         
         function connect(obj)
             disp('Connect to iViewX')
-            ret = calllib('iViewXAPI', 'iV_Connect', formatString(16, int8('192.168.1.3')), int32(4444), formatString(16, int8('192.168.1.2')), int32(5555));
+            ret = calllib('iViewXAPI', 'iV_Connect', '192.168.1.3', int32(4444), '192.168.1.2', int32(5555));
             switch ret
                 case 1
                     obj.connected = 1;
@@ -103,7 +103,7 @@ classdef EyeTracker < Singleton
         
         function setMarker(obj, marker)
             %send marker to iviewx 
-            calllib('iViewXAPI', 'iV_SendImageMessage', formatString(256, int8(marker)))
+            calllib('iViewXAPI', 'iV_SendImageMessage', marker)
         end
         
         function saveData(obj, filename)
