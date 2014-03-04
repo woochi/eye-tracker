@@ -1,20 +1,23 @@
-% import EyeTracker
+clear classes
+clc
 
-% tracker = EyeTracker.instance();
+tracker = EyeTracker.instance();
 
 images_dir = dir('./images');
 subdirs = [images_dir(:).isdir];
 articles = {images_dir(subdirs).name};
 articles(ismember(articles,{'.','..'})) = [];
 
-% Connect to the eye tracker
-% tracker.initializeTracker();
-% tracker.connect();
+% Connect to the eye tracker and calibrate
+tracker.initializeTracker();
+tracker.connect();
+tracker.calibrate()
 
 % Select whether to run the high or low resolution test
 
 try
-    Screen('Preference', 'SkipSyncTests', 1);
+    % Screen('Preference', 'SkipSyncTests', 1);
+    Screen('Preference', 'ConserveVRAM', 64);
     screens = Screen('Screens');
     screenNumber =  max(screens);
 
@@ -23,6 +26,8 @@ try
     
     [screen_width, screen_height] = Screen('WindowSize', screenNumber);
     screen_padding = 200;
+    
+    tracker.startRecording();
     
     for article = articles
         article_name = article{1};
@@ -43,13 +48,10 @@ try
 
         Screen('Flip',w);
         KbStrokeWait; % TODO: replace with sleep in actual implementation
-
-        % tracker.calibrate()
-        % tracker.startTracking()
         
         for i = 0:9
-            % tracker.setMarker(marker)
             image = imread(strcat('./images/', article_name, '/', num2str(i), '.jpg'), 'jpg');
+            tracker.setMarker(strcat(article_name, '/', num2str(i), '.jpg'));
             Screen('PutImage', w, image); % put image on screen
             Screen('Flip',w); % now visible on screen
             KbStrokeWait;
@@ -69,6 +71,6 @@ catch %#ok<*CTCH>
 end
 
 % Save tracking data to a file and disconnect
-% tracker.stopRecording()
-% tracker.saveData(filename)
-% tracker.disconnect();
+tracker.stopRecording();
+tracker.saveData('recording');
+tracker.disconnect();
