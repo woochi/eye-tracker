@@ -66,5 +66,5 @@ end
 
 % Tallenna seurantadata ja sulje yhteys
 %tracker.stopRecording();
-%tracker.saveData('recording');
+%tracker.saveData(conf.save_path);
 %tracker.disconnect();
