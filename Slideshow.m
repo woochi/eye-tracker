@@ -1,76 +1,70 @@
 clear classes
 clc
 
-tracker = EyeTracker.instance();
+conf = config();
 
-images_dir = dir('./images');
-subdirs = [images_dir(:).isdir];
-articles = {images_dir(subdirs).name};
-articles(ismember(articles,{'.','..'})) = [];
+%tracker = EyeTracker.instance();
 
-% Connect to the eye tracker and calibrate
-tracker.initializeTracker();
-tracker.connect();
-tracker.calibrate()
+% Lue artikkelikansion sis?lt?
+image_dir = dir(conf.image_dir);
 
-% Select whether to run the high or low resolution test
+% Lue kaikki alakansioiden nimet (yksitt?iset artikkelit)
+% Poista nykyinen ja yl?kansio (., ..)
+subdirs = [image_dir(:).isdir];
+articles = {image_dir(subdirs).name}; %
+articles(ismember(articles, {'.','..'})) = [];
+
+% Yhdist? seurantakameraan ja kalibroi
+%tracker.initializeTracker();
+%tracker.connect();
+%tracker.calibrate()
 
 try
-    % Screen('Preference', 'SkipSyncTests', 1);
-    Screen('Preference', 'ConserveVRAM', 64);
+    % Alusta n?ytt?
+    Screen('Preference', 'SkipSyncTests', 1);
+    %Screen('Preference', 'ConserveVRAM', 64);
     screens = Screen('Screens');
-    screenNumber =  max(screens);
+    screen =  max(screens);
 
-    % Open window with default settings:
-    w = Screen('OpenWindow', screenNumber);
-    
-    [screen_width, screen_height] = Screen('WindowSize', screenNumber);
-    screen_padding = 200;
-    
-    tracker.startRecording();
+    % Avaa ikkuna oletusasetuksilla
+    window = Screen('OpenWindow', screen);
+        
+    % Aloita katseenseurannan tallentaminen
+    %tracker.startRecording();
     
     for article = articles
-        article_name = article{1};
-        
-        % Select specific text font, style and size:
-        Screen('TextFont', w, 'Courier New');
-        Screen('TextSize', w, 28);
-        Screen('TextStyle', w, 1+2);
-        
-        % Display news title as text
-        [nx, ny, bbox] = DrawFormattedText(w, article_name, ... 
-            screen_width/2 - screen_padding*2, ... % Frame x coordinate
-            screen_height/2, ... % Frame y coordinate
-            0, 100 );
-    
-        % Show computed text bounding box:
-        %          Screen('FrameRect', w, 0, bbox);
+        % Lue muistiin t?m?n artikkelin nimi ja kuvat
+        article_dir = article{1};
+        article_path = strcat(conf.image_dir, '/', article_dir);
+        [title, images, image_names] = load_article(article_path, conf.resolution);
 
-        Screen('Flip',w);
-        KbStrokeWait; % TODO: replace with sleep in actual implementation
+        % N?yt? artikkelin otsikko
+        show_title(title, screen, window);
+        pause(conf.title_show_time);
         
-        for i = 0:9
-            image = imread(strcat('./images/', article_name, '/', num2str(i), '.jpg'), 'jpg');
-            tracker.setMarker(strcat(article_name, '/', num2str(i), '.jpg'));
-            Screen('PutImage', w, image); % put image on screen
-            Screen('Flip',w); % now visible on screen
-            KbStrokeWait;
+        %{
+        for i = 1:length(images)
+            Screen('PutImage', window, images{i}); % Piirr? kuva puskuriin
+            % L?het? palvelimelle aikamerkki kuvan nimell?
+            %tracker.setMarker(image_names{i});
+            Screen('Flip', window); % N?yt? puskuroitu kuva
+            pause(conf.image_show_time);
         end
+        %}
+        show_collage(images, screen, window);
+        KbPressWait();
     end
 
     close all;
     Screen('CloseAll');
     
-catch %#ok<*CTCH>
-    % This "catch" section executes in case of an error in the "try"
-    % section []
-    % above.  Importantly, it closes the onscreen window if it's open.
+catch
     Screen('CloseAll');
     fclose('all');
     psychrethrow(psychlasterror);
 end
 
-% Save tracking data to a file and disconnect
-tracker.stopRecording();
-tracker.saveData('recording');
-tracker.disconnect();
+% Tallenna seurantadata ja sulje yhteys
+%tracker.stopRecording();
+%tracker.saveData('recording');
+%tracker.disconnect();
