@@ -1,28 +1,28 @@
-clear classes
+  clear classes
 clc
 
 conf = config();
 
-%tracker = EyeTracker.instance();
+tracker = EyeTracker.instance();
 
-% Lue artikkelikansion sisältö
+% Lue artikkelikansion sisÃ¤ltÃ¶
 image_dir = dir(conf.image_dir);
 
-% Lue kaikki alakansioiden nimet (yksittäiset artikkelit)
-% Poista nykyinen ja yläkansio (., ..)
+% Lue kaikki alakansioiden nimet (yksittÃ¤iset artikkelit)
+% Poista nykyinen ja ylÃ¤kansio (., ..)
 subdirs = [image_dir(:).isdir];
 articles = {image_dir(subdirs).name}; %
 articles(ismember(articles, {'.','..'})) = [];
 
-% Yhdistä seurantakameraan ja kalibroi
+% YhdistÃ¤ seurantakameraan ja kalibroi
 tracker.initializeTracker();
 tracker.connect();
-tracker.calibrate()
+%tracker.calibrate();
 
 try
-    % Alusta näyttö
-    Screen('Preference', 'SkipSyncTests', 1);
-    %Screen('Preference', 'ConserveVRAM', 64);
+    % Alusta nÃ¤yttÃ¶
+    % Screen('Preference', 'SkipSyncTests', 1);
+    %  Screen('Preference', 'ConserveVRAM', 64);
     screens = Screen('Screens');
     screen =  max(screens);
 
@@ -30,40 +30,47 @@ try
     window = Screen('OpenWindow', screen);
         
     % Aloita katseenseurannan tallentaminen
-    %tracker.startRecording();
+    tracker.startRecording();
     
     for article = articles
-        % Lue muistiin tämän artikkelin nimi ja kuvat
+        % Lue muistiin tÃ¤mÃ¤n artikkelin nimi ja kuvat
         article_dir = article{1};
         article_path = strcat(conf.image_dir, '/', article_dir);
         [title, images, image_names] = load_article(article_path, conf.resolution);
-
-        % Näytä artikkelin otsikko
+ 
+        % NÃ¤ytÃ¤ artikkelin otsikko
         show_title(title, screen, window);
         pause(conf.title_show_time);
         
         for i = 1:length(images)
-            Screen('PutImage', window, images{i}); % Piirrä kuva puskuriin
-            % Lähetä palvelimelle aikamerkki kuvan nimellä
-            %tracker.setMarker(image_names{i});
-            Screen('Flip', window); % Näytä puskuroitu kuva
-            pause(conf.image_show_time);
+            % LÃ¤hetÃ¤ palvelimelle aikamerkki kuvan nimellÃ¤
+            tracker.setMarker(image_names{i});
+            
+            % PiirrÃ¤ kuva puskuriin
+            texture = Screen('MakeTexture', window, images{i});
+            Screen('DrawTexture', window, texture);
+            
+            % NÃ¤ytÃ¤ puskuroitu kuva
+            Screen('Flip', window);
+            pause(conf.image_show_time); 
         end
         
         show_collage(images, screen, window);
         KbPressWait();
     end
-
-    close all;
-    Screen('CloseAll');
     
 catch
     Screen('CloseAll');
-    fclose('all');
+    ShowCursor
     psychrethrow(psychlasterror);
 end
 
-% Tallenna seurantadata ja sulje yhteys
 tracker.stopRecording();
-tracker.saveData(conf.save_path);
+tracker.saveData(conf.save_path, conf.user);
+
+% Sulje ikkuna
+Screen('CloseAll');
+ShowCursor
+
+% Sulje yhteys
 tracker.disconnect();
