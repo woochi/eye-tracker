@@ -106,8 +106,8 @@ classdef EyeTracker < Singleton
             calllib('iViewXAPI', 'iV_SendImageMessage', marker)
         end
         
-        function saveData(obj, filename)
-            calllib('iViewXAPI', 'iV_SaveData', formatString(256, int8(filename)), formatString(64, int8('asd')), formatString(64, int8('asd')), int8(1))
+        function saveData(obj, filename, user)
+            calllib('iViewXAPI', 'iV_SaveData', filename, user, 'asd', int32(1))
         end
         
         function stopRecording(obj)
