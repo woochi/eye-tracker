@@ -70,6 +70,7 @@ try
         show_collage(images, screen, window);
         KbPressWait();
     end
+
 catch
     Screen('CloseAll');
     ShowCursor
