@@ -12,8 +12,14 @@ params.title_show_time = 0.2;
 % Kuvien n?ytt?aika sekunteina
 params.image_show_time = 0.2;
 
+% Tarkennuskuvan n?ytt?aika sekununteina
+params.marker_show_time = 0.2;
+
+% Tarkennuskuvan nimi
+params.marker_image = 'marker.jpg';
+
 % Seurantadatan tallennuskansio
-params.save_path = 'C:\tracking.idf'
+params.save_path = 'C:\';
 
 end
 

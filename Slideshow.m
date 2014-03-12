@@ -1,28 +1,28 @@
-  clear classes
+clear classes
 clc
 
 conf = config();
 
 tracker = EyeTracker.instance();
 
-% Lue artikkelikansion sisÃ¤ltÃ¶
+% Lue artikkelikansion sis????lt????
 image_dir = dir(conf.image_dir);
 
-% Lue kaikki alakansioiden nimet (yksittÃ¤iset artikkelit)
-% Poista nykyinen ja ylÃ¤kansio (., ..)
+% Lue kaikki alakansioiden nimet (yksitt????iset artikkelit)
+% Poista nykyinen ja yl????kansio (., ..)
 subdirs = [image_dir(:).isdir];
 articles = {image_dir(subdirs).name}; %
 articles(ismember(articles, {'.','..'})) = [];
 
-% YhdistÃ¤ seurantakameraan ja kalibroi
+% Yhdist???? seurantakameraan ja kalibroi
 tracker.initializeTracker();
 tracker.connect();
-%tracker.calibrate();
+tracker.calibrate();
 
 try
-    % Alusta nÃ¤yttÃ¶
+    % Alusta n????ytt????
     % Screen('Preference', 'SkipSyncTests', 1);
-    %  Screen('Preference', 'ConserveVRAM', 64);
+    % Screen('Preference', 'ConserveVRAM', 64);
     screens = Screen('Screens');
     screen =  max(screens);
 
@@ -32,29 +32,41 @@ try
     % Aloita katseenseurannan tallentaminen
     tracker.startRecording();
     
+    % Lataa keskimarkkerikuva
+    marker_image = imread([conf.image_dir '/' conf.marker_image]);
+    marker_texture = Screen('MakeTexture', window, marker_image);
+
     for article = articles
-        % Lue muistiin tÃ¤mÃ¤n artikkelin nimi ja kuvat
+        % Lue muistiin t????m????n artikkelin nimi ja kuvat
         article_dir = article{1};
         article_path = strcat(conf.image_dir, '/', article_dir);
         [title, images, image_names] = load_article(article_path, conf.resolution);
  
-        % NÃ¤ytÃ¤ artikkelin otsikko
+        % N????yt???? artikkelin otsikko
+        tracker.setMarker(title);
         show_title(title, screen, window);
         pause(conf.title_show_time);
         
         for i = 1:length(images)
-            % LÃ¤hetÃ¤ palvelimelle aikamerkki kuvan nimellÃ¤
+            % N?yt? keskimarkkeri          
+            tracker.setMarker('CenterMarker');
+            Screen('DrawTexture', window, marker_texture);
+            Screen('Flip', window);
+            pause(conf.marker_show_time);                                                        
+            
+            % L????het???? palvelimelle aikamerkki kuvan nimell????
             tracker.setMarker(image_names{i});
             
-            % PiirrÃ¤ kuva puskuriin
+            % Piirr???? kuva puskuriin
             texture = Screen('MakeTexture', window, images{i});
             Screen('DrawTexture', window, texture);
             
-            % NÃ¤ytÃ¤ puskuroitu kuva
+            % N????yt???? puskuroitu kuva
             Screen('Flip', window);
             pause(conf.image_show_time); 
         end
         
+        % N?yt? montaasi artikkelin kuvista
         show_collage(images, screen, window);
         KbPressWait();
     end

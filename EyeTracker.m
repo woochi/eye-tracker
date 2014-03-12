@@ -106,8 +106,10 @@ classdef EyeTracker < Singleton
             calllib('iViewXAPI', 'iV_SendImageMessage', marker)
         end
         
-        function saveData(obj, filename, user)
-            calllib('iViewXAPI', 'iV_SaveData', filename, user, 'asd', int32(1))
+        function saveData(obj, path, user)
+            file_name = [path '/tracking_' user '.idf'];
+            description = ['Tracking data for ' user];
+            calllib('iViewXAPI', 'iV_SaveData', file_name, user, description, int32(1))
         end
         
         function stopRecording(obj)
