@@ -11,8 +11,10 @@ image_dir = dir(conf.image_dir);
 % Lue kaikki alakansioiden nimet (yksitt????iset artikkelit)
 % Poista nykyinen ja yl????kansio (., ..)
 subdirs = [image_dir(:).isdir];
-articles = {image_dir(subdirs).name}; %
-articles(ismember(articles, {'.','..'})) = [];
+ordered_articles = {image_dir(subdirs).name}; %
+ordered_articles(ismember(ordered_articles, {'.','..'})) = [];
+permutation = randperm(length(ordered_articles));
+articles = ordered_articles(permutation);
 
 % Yhdist???? seurantakameraan ja kalibroi
 tracker.initializeTracker();
@@ -43,10 +45,10 @@ try
         [title, images, image_names] = load_article(article_path, conf.resolution);
  
         % N????yt???? artikkelin otsikko
-        tracker.setMarker(title);
+        tracker.setMarker('TitleScreen');
         show_title(title, screen, window);
         pause(conf.title_show_time);
-        
+
         for i = 1:length(images)
             % N?yt? keskimarkkeri          
             tracker.setMarker('CenterMarker');
