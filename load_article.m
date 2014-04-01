@@ -17,7 +17,6 @@ function [ title, images, image_names ] = load_article( path, resolution )
         image_name = image_files(i).name;
         path = strcat(image_path, '/', image_name);
         image_names{i} = image_name;
-        images{i} = imread(path);
     end
 
 end

@@ -1,4 +1,4 @@
-function [] = show_collage( images, screen, window )
+function [] = show_collage( title, images, screen, window )
 
   per_row = 5;
   per_col = 2;
@@ -31,6 +31,8 @@ function [] = show_collage( images, screen, window )
   end
 
   Screen('PutImage', window, collage); % Piirr?? kuva puskuriin
+  [nx, ny, bbox] = DrawFormattedText(window, title{1}, ...
+        100, 50, 0, 100 );
   Screen('Flip', window); % N??yt?? puskuroitu kuva
 
 end

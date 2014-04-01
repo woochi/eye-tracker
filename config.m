@@ -1,7 +1,7 @@
 function [ params ] = config()
 
 % Testiss? k?ytett?v? kuvaresoluutio
-params.resolution = 'high';
+params.resolution = 'low';
 
 % Kuvakansio
 params.image_dir = './images';
