@@ -1,3 +1,8 @@
 *.m~
 .DS_Store
 images.bak
+all-images
+fixation-maps
+data
+*.bak
+text.jpg
