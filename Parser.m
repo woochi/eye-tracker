@@ -14,11 +14,13 @@ classdef Parser
     
     methods
         % Lue silm?nliikedata tiedostosta.
-        function parse(obj, file_path)
-            %disp(file_path);
+        function parsedSamples = parse(obj, filename)
+            parsedSamples = [];
+            [path, name, ext] = fileparts(filename);
+            subject = name;
             
             % Avaa tiedosto
-            [fid, error] = fopen(file_path);
+            [fid, error] = fopen(filename);
             if error
                 disp(error)
                 return
@@ -27,17 +29,12 @@ classdef Parser
             % Lue tiedoston loppuun asti
             marker = readHeader(fid);
             while size(marker) > 0
-                %disp(marker);
-                [image_info, filename] = getImageInfoFromMarker(marker);
-                [marker, fixations] = readFixations(fid);
-                if ~isempty(fieldnames(image_info))
-                    %disp(image_info.Filename);
-                    img_size = [image_info.Height image_info.Width];
-                    img_width = img_size(1);
-                    img_height = img_size(2);
-                    [X, Y] = mapFixations(fixations, img_width, img_height);
-                    attention_map = createAttentionMap(X, Y, img_size);
-                    imwrite(attention_map, ['./fixation-maps/' filename], 'png');
+                [imageInfo, imageName, startTime] = getImageInfoFromMarker(marker);
+                [marker, samples] = parseSampleBlock(fid, subject, imageName, startTime);
+                if ~isempty(fieldnames(imageInfo))
+                    blockSize = size(samples);
+                    disp(['Parsed ' sprintf('%u', blockSize(1)) ' samples for: ' subject ' ' imageName]);
+                    parsedSamples = [parsedSamples; samples];
                 end
             end
             
@@ -45,7 +42,6 @@ classdef Parser
             fclose(fid);
         end
     end
-    
 end
 
 function [nextMarker] = readHeader(fid)
@@ -68,21 +64,28 @@ function [nextMarker] = readHeader(fid)
     end
 end
 
-function [nextMarker, fixations] = readFixations(fid)
+function [nextMarker, samples] = parseSampleBlock(fid, subject, imageName, startTime)
     % Read image-specific fixation data.
     % Returns the next marker line if available.
+    IMAGE_SHOW_TIME = 5000000;
+    sampleTime = startTime;
     line = fgets(fid);
     nextMarker = [];
-    fixations = [];
+    samples = [];
 
     while ischar(line)
-        [time, type, trial, data] = getData(line);
+        [sampleTime, type, trial, data] = getData(line);
         if strcmp(type, 'MSG')
             nextMarker = line;
             break;
+        elseif strcmpi(imageName(2), '9') && sampleTime - startTime > IMAGE_SHOW_TIME
+            line = fgets(fid);
+            continue;
         elseif strcmp(type, 'SMP')
-            [lx, ly] = parseData(data);
-            fixations = [fixations; lx ly];
+            sample = parseSample(data);
+            sample.subject = subject;
+            sample.image = imageName;
+            samples = [samples; sample];
         end
 
         line = fgets(fid);
@@ -90,11 +93,12 @@ function [nextMarker, fixations] = readFixations(fid)
 end
 
 function [time, type, trial, data] = getData(line)
-    % Separate message time, type, trian no. and data to separate fields.
+    % Separate message time, type, trial no. and data to separate fields.
     data = line;
-    [time, data] = strtok(data);
+    [timestamp, data] = strtok(data);
     [type, data] = strtok(data);
     [trial, data] = strtok(data);
+    time = str2num(timestamp);
 end
 
 function [isComment] = isComment(line)
@@ -103,22 +107,36 @@ function [isComment] = isComment(line)
     isComment = strcmp(line(1), '#');
 end
 
-function [lx, ly, rx, ry] = parseData(line)
+function [sample] = parseSample(line)
     values = sscanf(line, '%f');
-    lx = values(13);
-    ly = values(14);
-    rx = values(15);
-    ry = values(16);
+    fields = {'lrx', 'lry', 'rrx', 'rry', ... % Raw eye coordinates (px)
+        'lcr1x', 'lcr1y', 'lcr2x', 'lcr2y', ... % Left CR 1 + 2 (px)
+        'rcr1x', 'rcr1y', 'rcr2x', 'rcr2y', ... % Right CR 1 + 2 (px)
+        'lporx', 'lpory', 'rporx', 'rpory', ... % Point of regard (px)
+        'timing', 'latency', 'lvalid', 'rvalid', 'confidence', ...
+        'hposx', 'hposy', 'hposz', ... % Head position (mm)
+        'hrotx', 'hroty', 'hrotz', ... % Head rotation (deg)
+        'leposx', 'leposy', 'leposz', ... % Left eye position (mm)
+        'reposx', 'reposy', 'reposz', ... % Right eye position (mm)
+        'lgvecx', 'lgvecy', 'lgvecz', ... % Left gaze vector
+        'rgvecx', 'rgvecy', 'rgvecz' % Right gaze vector
+        };
+    sample = struct;
+    fieldCount = size(fields);
+    for i = 1:fieldCount(2)
+        field = fields(1:i);
+        sample.(field{i}) = values(i);
+    end
 end
 
-function [info, file_name] = getImageInfoFromMarker(line)
-    [time, type, trial, data] = getData(line);
+function [info, fileName, startTime] = getImageInfoFromMarker(line)
+    [startTime, type, trial, data] = getData(line);
     [a, data] = strtok(data);
     [b, data] = strtok(data);
-    [file_name, data] = strtok(data);
-    path = ['./all-images/' file_name];
+    [fileName, data] = strtok(data);
+    path = ['./all-images/' fileName];
     if exist(path, 'file')
-        info = imfinfo(['./all-images/' file_name]);
+        info = imfinfo(['./all-images/' fileName]);
     else
         info = struct();
     end
