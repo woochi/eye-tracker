@@ -14,8 +14,7 @@ classdef Parser
     
     methods
         % Lue silm?nliikedata tiedostosta.
-        function parsedSamples = parse(obj, filename)
-            parsedSamples = [];
+        function parse(obj, filename)
             [path, name, ext] = fileparts(filename);
             subject = name;
             
@@ -34,7 +33,7 @@ classdef Parser
                 if ~isempty(fieldnames(imageInfo))
                     blockSize = size(samples);
                     disp(['Parsed ' sprintf('%u', blockSize(1)) ' samples for: ' subject ' ' imageName]);
-                    parsedSamples = [parsedSamples; samples];
+                    save(['./data/samples/' subject '.' imageName '.mat'], 'samples');
                 end
             end
             

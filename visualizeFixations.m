@@ -36,7 +36,7 @@ for i = 1:length(files)
         for j = 1:fixationCount(1)
             x = mapped_fixations(j,1) * xscale;
             y = mapped_fixations(j,2) * yscale;
-            circle(x, y, circleRadius);
+            drawCircle(x, y, circleRadius);
         end
         
         % Save image with fixations

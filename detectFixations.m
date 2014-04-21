@@ -1,9 +1,9 @@
-files = getAllFiles('./filtered-sample-data/');
+files = getAllFiles('./data/samples-filtered/');
 
 % How many samples to include in initial window.
 % Ideal sample window should include samples from a duration of 100-200ms.
 % Used sampling speed is 60Hz => 1000ms / 60ms * 9 = 200ms.
-window_size = 12;
+window_size = 9;
 
 % Dispersion threshold should be a visual angle of 0.5 deg - 1.5 deg.
 % The corresponding pixel count is:
@@ -19,16 +19,17 @@ fixationCount = 0; % Counter
 for i = 1:length(files)
     file = files{i};
     fileInfo = dir(file);
-    if ~isempty(strfind(fileInfo.name, '.mat')) && isempty(strfind(fileInfo.name, '9'))
-        load(file, 'samples');
-        sampleCount = length(samples);
+    if ~isempty(strfind(fileInfo.name, '.mat'))
+        load(file, 'filteredSamples');
+        matSize = size(filteredSamples);
+        sampleCount = matSize(1);
         fixations = [];
 
         start_index = 1;
         end_index = window_size;
         while end_index <= sampleCount
             % Initialize window
-            window = samples(start_index:end_index);
+            window = filteredSamples(start_index:end_index);
             
             % Calculate window dispersion
             d = dispersion(window);
@@ -38,7 +39,7 @@ for i = 1:length(files)
                 % While dispersion is below threshold increase window size
                 while (d <= dispersion_threshold) && (end_index + 1 <= sampleCount)
                     end_index = end_index + 1;
-                    window = samples(start_index:end_index);
+                    window = filteredSamples(start_index:end_index);
                     d = dispersion(window);
                 end
                 
@@ -58,7 +59,7 @@ for i = 1:length(files)
         
         matSize = size(fixations);
         fixationCount = fixationCount + matSize(1);
-        save(['./fixation-data/' fileInfo.name], 'fixations');
+        save(['./data/fixations/' fileInfo.name], 'fixations');
     end
 end
 

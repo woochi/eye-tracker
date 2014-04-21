@@ -1,4 +1,4 @@
-files = getAllFiles('./fixation-data/');
+files = getAllFiles('./data/fixations/');
 
 % Stimulus screen size
 screenWidth = 1920;
@@ -27,7 +27,7 @@ for i = 1:length(files)
         bigDimension = max([imageWidth imageHeight]);
         
         % Map and filter fixations based on image size
-        mapped_fixations = [];
+        mappedFixations = [];
         fixationCount = size(fixations);
         for j = 1:fixationCount(1)
             xoffset = (screenWidth - imageWidth) / 2;
@@ -40,18 +40,18 @@ for i = 1:length(files)
                 % Store the image mapped fixations
                 centerDistance = pdist([imageWidth*0.5 imageHeight*0.5; x y]);
                 centerPercentage = floor(centerDistance / (bigDimension * 0.5) * 100);
-                mapped_fixations = [mapped_fixations; x y centerPercentage];
+                mappedFixations = [mappedFixations; x y centerPercentage];
             end
         end
         
-        matSize = size(mapped_fixations);
+        matSize = size(mappedFixations);
         fixationTotal = fixationTotal + matSize(1);
         if ~isempty(strfind(fileInfo.name, 'H.'))
             highFixationCount = highFixationCount + matSize(1);
         elseif ~isempty(strfind(fileInfo.name, 'L.'))
             lowFixationCount = lowFixationCount + matSize(1);
         end
-        save(['./mapped-fixation-data/' fileInfo.name], 'mapped_fixations');
+        save(['./data/fixations-mapped/' fileInfo.name], 'mappedFixations');
     end
 end
 
