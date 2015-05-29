@@ -1,4 +1,4 @@
-function drawLine( image, color, x0, y0, x1, y1)
+function im = drawLine( im, color, x0, y0, x1, y1)
 
 dx = abs(x1-x0);
 dy = abs(y1-y0);
@@ -15,10 +15,10 @@ else
     sy = -1;
 end
 
-err = dx-dy;
+err = dx - dy;
 
 while true
-    drawPixel(image, x0, y0, color);
+    im = drawPixel(im, color, x0, y0);
     if x0 == x1 && y0 == y1
         break;
     end

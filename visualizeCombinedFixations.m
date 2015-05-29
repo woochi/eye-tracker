@@ -1,15 +1,45 @@
 clear ALL;
 
 circleRadius = 10;
-circleColor = 255;
+circleColor = [255 0 0];
 outputImageSize = [512 512]; % Width, height
-files = getAllFiles('./mapped-fixation-data/');
+files = getAllFiles('./data/fixations-mapped/');
+combinedFixations = containers.Map;
 
+letters = ['a'; 'b'; 'c'; 'd'; 'e'; 'f'; 'g'; 'h'; 'i'];
+
+for n = 1:length(letters)
+    for i = 0:9
+        fileName = [letters(n) num2str(i)];
+        for j = 1:length(files)
+            file = files{j};
+            if ~isempty(strfind(file, fileName)) && isempty(strfind(file, '1L'))
+                [path, name, ~] = fileparts(file);
+                load(file, 'mappedFixations');
+                subject = [name(1) name(2)];
+                subjectColor = getFixationColor(subject);
+                matSize = size(mappedFixations);
+                for f = 1:matSize(1)
+                    fixation = {};
+                    fixation.color = subjectColor;
+                    fixation.position = [mappedFixations(f, 1) mappedFixations(f, 2)];
+                    if combinedFixations.isKey(fileName)
+                        combinedFixations(fileName) = [combinedFixations(fileName); fixation];
+                    else
+                        combinedFixations(fileName) = [fixation];
+                    end
+                end
+            end
+        end
+    end
+end
+
+%{
 for i = 1:length(files)
     file = files{i};
     fileInfo = dir(file);
     if ~isempty(strfind(fileInfo.name, '.mat'))
-        load(file, 'mapped_fixations');
+        load(file, 'mappedFixations');
         
         % Parse image name from file name
         [subject, remain] = strtok(fileInfo.name, '.');
@@ -26,36 +56,37 @@ for i = 1:length(files)
         end
     end
 end
+%}
 
-for imageName = combinedFixations
-    disp(fileName);
-    
-    imagePath = ['./all-images/' imageName];
-    imageInfo = imfinfo(imagePath);
+disp(combinedFixations('a0'));
 
-    im = imread(imagePath);
-    resizedImage = imresize(im, [outputImageSize(2) outputImageSize(1)]);
-    xscale = outputImageSize(1) / imageInfo.Width;
-    yscale = outputImageSize(2) / imageInfo.Height;
-    fig = figure('Position', [100, 100, outputImageSize(1), outputImageSize(2)]);
-    set(fig, 'visible', 'off');
-    set(gca, 'visible', 'off');
-    set(gca,'xtick',[],'ytick',[])
-    imshow(resizedImage);
-    hold on;
+for n = 1:length(letters)
+    for i = 0:9
+        imageId = [letters(n) num2str(i)];
+        imageName = [imageId '_h.jpg'];
+        disp(imageName);
+        imagePath = ['./all-images/' imageName];
+        imageInfo = imfinfo(imagePath);
 
-    % Draw fixation points onto image
-    fixationCount = size(mapped_fixations);
-    for j = 1:fixationCount(1)
-        x = mapped_fixations(j,1) * xscale;
-        y = mapped_fixations(j,2) * yscale;
-        circle(x, y, circleRadius);
+        im = imread(imagePath);
+        resizedImage = imresize(im, [outputImageSize(2) outputImageSize(1)]);
+        xscale = outputImageSize(1) / imageInfo.Width;
+        yscale = outputImageSize(2) / imageInfo.Height;
+
+        mappedFixations = combinedFixations(imageId);
+        % Draw fixation points onto image
+        fixationCount = size(mappedFixations);
+        for j = 1:fixationCount(1)
+            fixation = mappedFixations(j);
+            x = round(fixation.position(1) * xscale);
+            y = round(fixation.position(2) * yscale);
+            resizedImage = drawCircle(resizedImage, x, y, circleRadius, fixation.color, true);
+            resizedImage = drawCircle(resizedImage, x, y, circleRadius, [0 0 0], false);
+        end
+
+        % Save image with fixations
+        imwrite(resizedImage, ['./fixation-images-combined/' imageId '.jpg'], 'jpg');
     end
-
-    % Save image with fixations
-    saveas(fig, ['./combined-fixation-point-maps/' imageName], 'jpg');
-    hold off;
-    close(fig);
 end
 
 clear ALL;
